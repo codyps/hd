@@ -1,0 +1,7 @@
+[package]
+name = "max-hd"
+version = "0.1.0"
+authors = ["Cody Schafer <dev@codyps.com>"]
+
+[dependencies]
+itertools = "*"
