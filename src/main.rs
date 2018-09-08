@@ -41,7 +41,7 @@ fn hd_for_set(vals: &[u8]) -> (u8, Vec<u8>, Vec<u8>)
 fn test_hd_for_set() {
     //  left: `(1, [0, 1, 2, 0, 0, 3, 0, 0, 0])`,
     assert_eq!(hd_for_set(&[0b101, 0b111, 0b000]),
-        (1,
+        (1, vec![0,1,1,1,0,0,0,0],
          vec![
         //          0b101,0b111,0b000
         /* 0b101 */    0, 1, 2,
@@ -66,47 +66,37 @@ impl<'a, B: fmt::Binary + 'a> fmt::Display for BinFmt<'a, B> {
 }
 
 fn main() {
+    let symbols = 0..0x10;
+    let needed_codes = 5;
+
     let mut best = vec![];
     let mut curr_min_hd = 0;
 
-    let mut vals = [0u8;5];
+    let symbols = symbols.combinations(needed_codes);
 
-    loop {
-        let candidate = hd_for_set(&vals);
+    for i in symbols {
+        let candidate = hd_for_set(&i);
         if candidate.0 > curr_min_hd {
             curr_min_hd = candidate.0;
             best.clear();
-            best.push((vals, candidate));
+            best.push((i, candidate));
         } else if candidate.0 == curr_min_hd {
-            best.push((vals, candidate));
+            best.push((i, candidate));
         } else {
             // not good enough, discard
         }
+    }
 
-        let mut i = 0;
-        loop {
-            vals[i] += 1;
-            if vals[i] < 0xf {
-                break;
-            }
-            vals[i] &= 0xf;
-            i += 1;
+    println!("{} candidates with HD({}):", best.len(), curr_min_hd);
 
-            if i >= vals.len() {
-                // done
-                println!("{} candidates with HD({}):", best.len(), curr_min_hd);
+    best.sort_by_key(|x| ((x.1).1).to_owned());
 
-                for (vals, (_min_hd, hd_cts, _hd_table)) in best {
-                    println!("= {}", BinFmt {
-                        bit_width: 4,
-                        base: &vals[..]
-                    });
+    for (vals, (_min_hd, hd_cts, _hd_table)) in best {
+        println!("= {}", BinFmt {
+            bit_width: 4,
+            base: &vals[..]
+        });
 
-                    println!(" > {:?}", hd_cts);
-                }
-
-                return;
-            }
-        }
+        println!(" > {:?}", hd_cts);
     }
 }
