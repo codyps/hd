@@ -65,9 +65,9 @@ impl<'a, B: fmt::Binary + 'a> fmt::Display for BinFmt<'a, B> {
     }
 }
 
-fn main() {
-    let symbols = 0..0x10;
-    let needed_codes = 5;
+fn generate(sym_max: u8, needed_codes: usize)
+{
+    let symbols = 0..=sym_max;
 
     let mut best = vec![];
     let mut curr_min_hd = 0;
@@ -93,10 +93,25 @@ fn main() {
 
     for (vals, (_min_hd, hd_cts, _hd_table)) in best {
         println!("= {}", BinFmt {
-            bit_width: 4,
+            bit_width: (u8::max_value().count_ones() - sym_max.leading_zeros()) as u8,
             base: &vals[..]
         });
 
         println!(" > {:?}", hd_cts);
     }
+}
+
+fn main() {
+    // TODO: "given minimum codes N, determine the combinations that 
+    //       maximize number of potential codes without reducing HD"
+
+    // Example:
+    //  min_codes = 5; sym_max = 0xf
+    //  -> max min HD == 2
+    //  -> max codes with HD(2) == 8
+
+    let sym_max = 0b1111u8;
+    let needed_codes = 8;
+
+    generate(sym_max, needed_codes)
 }
