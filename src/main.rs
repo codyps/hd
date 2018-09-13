@@ -1,4 +1,8 @@
 extern crate itertools;
+#[macro_use]
+extern crate structopt;
+
+use structopt::StructOpt;
 use itertools::Itertools;
 use std::fmt;
 
@@ -65,23 +69,30 @@ impl<'a, B: fmt::Binary + 'a> fmt::Display for BinFmt<'a, B> {
     }
 }
 
-fn generate(sym_max: u8, needed_codes: usize)
+fn generate(sym_max: u8, needed_codes: usize) -> impl Iterator<Item=(Vec<u8>, u8, Vec<u8>, Vec<u8>)>
 {
     let symbols = 0..=sym_max;
+
+    symbols.combinations(needed_codes).map(|x| {
+        let y = hd_for_set(&x);
+        (x, y.0, y.1, y.2)
+    })
+}
+
+fn g(sym_max: u8, needed_codes: usize)
+{
+    let symbols = generate(sym_max, needed_codes);
 
     let mut best = vec![];
     let mut curr_min_hd = 0;
 
-    let symbols = symbols.combinations(needed_codes);
-
     for i in symbols {
-        let candidate = hd_for_set(&i);
-        if candidate.0 > curr_min_hd {
-            curr_min_hd = candidate.0;
+        if i.1 > curr_min_hd {
+            curr_min_hd = i.1;
             best.clear();
-            best.push((i, candidate));
-        } else if candidate.0 == curr_min_hd {
-            best.push((i, candidate));
+            best.push(i);
+        } else if i.1 == curr_min_hd {
+            best.push(i);
         } else {
             // not good enough, discard
         }
@@ -89,9 +100,9 @@ fn generate(sym_max: u8, needed_codes: usize)
 
     println!("{} candidates with HD({}):", best.len(), curr_min_hd);
 
-    best.sort_by_key(|x| ((x.1).1).to_owned());
+    best.sort_by_key(|x| (x.2).to_owned());
 
-    for (vals, (_min_hd, hd_cts, _hd_table)) in best {
+    for (vals, _min_hd, hd_cts, _hd_table) in best {
         println!("= {}", BinFmt {
             bit_width: (u8::max_value().count_ones() - sym_max.leading_zeros()) as u8,
             base: &vals[..]
@@ -99,6 +110,17 @@ fn generate(sym_max: u8, needed_codes: usize)
 
         println!(" > {:?}", hd_cts);
     }
+}
+
+#[derive(StructOpt,Debug)]
+struct Opts {
+    /// The maximum value of our symbol alphabet
+    #[structopt(short = "a", long = "alphabet-max")]
+    sym_max: u8,
+
+    /// Minumum number of symbols required
+    #[structopt(short = "s", long = "min-symbols")]
+    needed_symbols: usize,
 }
 
 fn main() {
@@ -110,8 +132,10 @@ fn main() {
     //  -> max min HD == 2
     //  -> max codes with HD(2) == 8
 
-    let sym_max = 0b1111u8;
-    let needed_codes = 8;
+    //let sym_max = 0b1111u8;
+    //let needed_codes = 8;
 
-    generate(sym_max, needed_codes)
+    let opt = Opts::from_args();
+    println!("{:?}", opt);
+    g(opt.sym_max, opt.needed_symbols);
 }

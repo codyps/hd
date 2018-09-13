@@ -5,3 +5,4 @@ authors = ["Cody Schafer <dev@codyps.com>"]
 
 [dependencies]
 itertools = "*"
+structopt = "0.2"
